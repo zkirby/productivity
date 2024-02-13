@@ -21,16 +21,37 @@
     // I mean, sheesh, live a little...
     if (isWeekend) return;
 
-    // Immediately whiteout any screen that isn't the subscriptions page
-    // or a video from the subscriptions page.
+    // We *must* navigate to the subscriptions page to be allowed to view
+    // a video since we're only allowed to view videos from the subscriptions page.
+    // While we're on the page, we'll collect all of the valid video links.
+    // NOTE: Edge case where we have more valid videos than what's rendered, not a big deal.
     const currentURL = window.location.href;
-    const referrer = document.referrer;
     const subscriptionsUrlRegex =
       /^https:\/\/www\.youtube\.com\/feed\/subscriptions/;
-    const isAllowedOnWeekends =
-      subscriptionsUrlRegex.test(currentURL) ||
-      subscriptionsUrlRegex.test(referrer);
+    const isSubscriptionPage = subscriptionsUrlRegex.test(currentURL);
 
+    if (isSubscriptionPage) {
+      // I swear to you I will figure out a better way to do this.
+      setTimeout(() => {
+        const validVideoLinks = Array.from(
+          document.querySelectorAll("ytd-thumbnail a#thumbnail")
+        ).map((a) => a.getAttribute("href"));
+        localStorage.setItem(
+          "validVideoLinks",
+          JSON.stringify(validVideoLinks)
+        );
+      }, 1000);
+    }
+
+    const validVideoLinks = JSON.parse(
+      localStorage.getItem("validVideoLinks") ?? "[]"
+    );
+    const isAllowedOnWeekends =
+      isSubscriptionPage ||
+      validVideoLinks.some((link) => currentURL.endsWith(link));
+
+    // Immediately whiteout any screen that isn't the subscriptions page
+    // or a video from the subscriptions page.
     if (!isAllowedOnWeekends) {
       const overlayElement = document.createElement("div");
       overlayElement.style.position = "fixed";
