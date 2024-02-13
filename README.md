@@ -1,2 +1,3 @@
 # productivity
-Various runnable scripts to improve your productivity!
+
+Some scripts I've built up over the years that I use to help with my productivity. Primarily, these are scripts that either _limit_ some undesirable activity such as watching youtube or
