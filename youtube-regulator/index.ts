@@ -12,6 +12,12 @@
 (function () {
   "use strict";
 
+  const SELECTORS = {
+    shorts: "ytd-rich-shelf-renderer[is-shorts]",
+    videoLinks: "ytd-thumbnail a#thumbnail",
+    relatedVideos: "#related",
+  };
+
   function check() {
     const today = new Date();
     const dayOfWeek = today.getDay();
@@ -33,8 +39,12 @@
     if (isSubscriptionPage) {
       // I swear to you I will figure out a better way to do this.
       setTimeout(() => {
+        // First, remove the shorts - those don't count.
+        const shorts = document.querySelector(SELECTORS.shorts);
+        shorts?.remove();
+
         const validVideoLinks = Array.from(
-          document.querySelectorAll("ytd-thumbnail a#thumbnail")
+          document.querySelectorAll(SELECTORS.videoLinks)
         ).map((a) => a.getAttribute("href"));
         localStorage.setItem(
           "validVideoLinks",
@@ -93,7 +103,7 @@
 
     // If it happens to be a valid page,
     // disable some of the more distracting elements.
-    const relatedVideosFeed = document.querySelector("#related");
+    const relatedVideosFeed = document.querySelector(SELECTORS.relatedVideos);
     relatedVideosFeed?.remove();
   }
 
