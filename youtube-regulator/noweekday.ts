@@ -18,14 +18,55 @@
     relatedVideos: "#related",
   };
 
+  function restrict() {
+    const overlayElement = document.createElement("div");
+    overlayElement.style.position = "fixed";
+    overlayElement.style.top = "0";
+    overlayElement.style.left = "0";
+    overlayElement.style.width = "100%";
+    overlayElement.style.height = "100%";
+    overlayElement.style.backgroundColor = "#0a0a0a";
+    overlayElement.style.display = "flex";
+    overlayElement.style.flexDirection = "column";
+    overlayElement.style.justifyContent = "center";
+    overlayElement.style.alignItems = "center";
+    overlayElement.style.zIndex = "1000";
+
+    const messageElement = document.createElement("div");
+    messageElement.style.color = "#ffffff";
+    messageElement.style.fontSize = "24px";
+    messageElement.textContent = "Sorry friend... Get back to work.";
+
+    const buttonElement = document.createElement("button");
+    buttonElement.textContent = "Okay :(";
+    buttonElement.style.marginTop = "20px";
+    buttonElement.style.fontSize = "20px";
+    buttonElement.style.padding = "10px 20px";
+    buttonElement.style.border = "none";
+    buttonElement.style.borderRadius = "5px";
+    buttonElement.style.cursor = "pointer";
+    buttonElement.style.backgroundColor = "#202020";
+    buttonElement.style.color = "#ffffff";
+    buttonElement.onclick = function () {
+      window.close();
+    };
+
+    overlayElement.appendChild(messageElement);
+    overlayElement.appendChild(buttonElement);
+    document.body.innerHTML = "";
+    document.body.appendChild(overlayElement);
+  }
+
   function check() {
     const today = new Date();
     const dayOfWeek = today.getDay();
     const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
 
-    // I allow myself to use Youtube freely on the weekends.
-    // I mean, sheesh, live a little...
-    if (isWeekend) return;
+    // Restricted YT access to weekends only.
+    if (!isWeekend) {
+      restrict();
+      return;
+    }
 
     // We *must* navigate to the subscriptions page to be allowed to view
     // a video since we're only allowed to view videos from the subscriptions page.
@@ -56,50 +97,10 @@
     const validVideoLinks = JSON.parse(
       localStorage.getItem("validVideoLinks") ?? "[]"
     );
-    const isAllowedOnWeekends =
+    const isAllowed =
       isSubscriptionPage ||
       validVideoLinks.some((link) => currentURL.endsWith(link));
-
-    // Immediately whiteout any screen that isn't the subscriptions page
-    // or a video from the subscriptions page.
-    if (!isAllowedOnWeekends) {
-      const overlayElement = document.createElement("div");
-      overlayElement.style.position = "fixed";
-      overlayElement.style.top = "0";
-      overlayElement.style.left = "0";
-      overlayElement.style.width = "100%";
-      overlayElement.style.height = "100%";
-      overlayElement.style.backgroundColor = "#0a0a0a";
-      overlayElement.style.display = "flex";
-      overlayElement.style.flexDirection = "column";
-      overlayElement.style.justifyContent = "center";
-      overlayElement.style.alignItems = "center";
-      overlayElement.style.zIndex = "1000";
-
-      const messageElement = document.createElement("div");
-      messageElement.style.color = "#ffffff";
-      messageElement.style.fontSize = "24px";
-      messageElement.textContent = "Sorry friend... Get back to work.";
-
-      const buttonElement = document.createElement("button");
-      buttonElement.textContent = "Okay :(";
-      buttonElement.style.marginTop = "20px";
-      buttonElement.style.fontSize = "20px";
-      buttonElement.style.padding = "10px 20px";
-      buttonElement.style.border = "none";
-      buttonElement.style.borderRadius = "5px";
-      buttonElement.style.cursor = "pointer";
-      buttonElement.style.backgroundColor = "#202020";
-      buttonElement.style.color = "#ffffff";
-      buttonElement.onclick = function () {
-        window.close();
-      };
-
-      overlayElement.appendChild(messageElement);
-      overlayElement.appendChild(buttonElement);
-      document.body.innerHTML = "";
-      document.body.appendChild(overlayElement);
-    }
+    if (!isAllowed) restrict();
 
     // If it happens to be a valid page,
     // disable some of the more distracting elements.
