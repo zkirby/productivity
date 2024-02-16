@@ -61,6 +61,17 @@
         return messageElement;
     }
 
+    function buildInput() {
+        var inputElement = document.createElement("input", { is: "tm-input" });
+        inputElement.style.marginTop = "20px";
+        inputElement.style.fontSize = "20px";
+        inputElement.style.padding = "10px 20px";
+        inputElement.style.borderRadius = "5px";
+        inputElement.style.border = "none";
+        inputElement.style.width = "60%";
+        return inputElement;
+    }
+
     /**
      * Check if today is the weekend
      */
@@ -78,13 +89,29 @@
         return SUBSCRIPTIONS_URL_REGEX.test(window.location.href);
     }
 
-    function buildChatMessage() {
+    function createChatBubble(message, isSender) {
+        var bubble = document.createElement("div");
+        bubble.textContent = message;
+        bubble.style.maxWidth = "60%";
+        bubble.style.padding = "10px";
+        bubble.style.borderRadius = "20px";
+        bubble.style.marginBottom = "5px";
+        if (isSender) {
+            bubble.style.backgroundColor = "#DCF8C6";
+            bubble.style.marginLeft = "auto";
+        }
+        else {
+            bubble.style.backgroundColor = "#ECECEC";
+        }
+        return bubble;
+    }
+    function buildChatMessage(onSubmit) {
         // Create main chat container
         var chatContainer = document.createElement("div");
         chatContainer.style.display = "flex";
         chatContainer.style.flexDirection = "column";
-        chatContainer.style.height = "400px"; // Adjust as needed
-        chatContainer.style.border = "1px solid #ccc";
+        chatContainer.style.height = "800px"; // Adjust as needed
+        chatContainer.style.border = "1.5px solid #ccc";
         chatContainer.style.padding = "10px";
         // Create container for chat bubbles
         var bubblesContainer = document.createElement("div");
@@ -108,11 +135,12 @@
         submitButton.onclick = function () {
             var message = textInput.value.trim();
             if (message) {
-                // Assume sender for demo purposes
+                // Assume sender
                 var bubble = createChatBubble(message, true);
                 bubblesContainer.appendChild(bubble);
                 textInput.value = ""; // Clear input after sending
                 bubblesContainer.scrollTop = bubblesContainer.scrollHeight; // Scroll to bottom
+                onSubmit(message);
             }
         };
         // Append input and button to input container
@@ -121,23 +149,14 @@
         // Append bubbles container and input container to main chat container
         chatContainer.appendChild(bubblesContainer);
         chatContainer.appendChild(inputContainer);
-        return chatContainer;
-    }
-    function createChatBubble(message, isSender) {
-        var bubble = document.createElement("div");
-        bubble.textContent = message;
-        bubble.style.maxWidth = "60%";
-        bubble.style.padding = "10px";
-        bubble.style.borderRadius = "20px";
-        bubble.style.marginBottom = "5px";
-        if (isSender) {
-            bubble.style.backgroundColor = "#DCF8C6";
-            bubble.style.marginLeft = "auto";
-        }
-        else {
-            bubble.style.backgroundColor = "#ECECEC";
-        }
-        return bubble;
+        return [
+            chatContainer,
+            function (msg) {
+                var bubble = createChatBubble(msg, false);
+                bubblesContainer.appendChild(bubble);
+                bubblesContainer.scrollTop = bubblesContainer.scrollHeight; // Scroll to bottom
+            },
+        ];
     }
 
     /**
@@ -172,25 +191,53 @@
 
     // ---------- Constants ----------
     var VIDEO_LINKS_KEY = "subVideoLinks";
-    // ---------- Scene ----------
+    // ---------- Scenes ----------
+    /**
+     * Ask for the users OPEN_API_KEY to be able to engage with the AI.
+     */
+    function buildAskForAPIKeyScene() {
+        var APIKEY = localStorage.getItem("OPENAI_API_KEY");
+        if (APIKEY)
+            return APIKEY;
+        var overlayElement = buildOverlay();
+        var containerElement = buildContainer();
+        var messageElement = buildText("Please Enter Your OpenAI API Key");
+        var inputElement = buildInput();
+        var buttonElement = buildButton("Submit", {
+            onClick: function () {
+                var apiKey = inputElement.value.trim();
+                if (apiKey) {
+                    // Save the API key and reload the page.
+                    localStorage.setItem("OPENAI_API_KEY", apiKey);
+                    window.location.reload();
+                }
+            },
+        });
+        containerElement.appendChild(messageElement);
+        containerElement.appendChild(inputElement);
+        containerElement.appendChild(buttonElement);
+        overlayElement.appendChild(containerElement);
+        return localStorage.getItem("OPENAI_API_KEY");
+    }
     /**
      * Blackouts the screen and shows the input prompt to ask
      * the AI overlord if I may pretty please view this video.
      */
-    function buildAskAIScene() {
+    function buildAskAIScene(onSubmit) {
         var overlayElement = buildOverlay();
         var containerElement = buildContainer();
         var messageElement = buildText("This Video Is Not Allowed");
         var buttonElement = buildButton("Okay", {
             onClick: function () { return window.close(); },
         });
-        var chatMessageElement = buildChatMessage();
+        var _a = buildChatMessage(onSubmit), chatMessageElement = _a[0], add = _a[1];
         containerElement.appendChild(messageElement);
         containerElement.appendChild(buttonElement);
         overlayElement.appendChild(containerElement);
         overlayElement.appendChild(chatMessageElement);
         document.body.innerHTML = "";
         document.body.appendChild(overlayElement);
+        return add;
     }
     // ---------- Main ------------
     function run() {
@@ -214,8 +261,38 @@
         var isAllowed = isSubscriptionPage || isSubVideoLink;
         // Immediately blackout any screen that isn't the subscriptions page
         // or a video from the subscriptions page. Let the AI decide if I can view it.
-        if (!isAllowed)
-            buildAskAIScene();
+        if (!isAllowed) {
+            // Ensure OPEN API KEY is loaded (otherwise can't engage with the AI).
+            var key_1 = buildAskForAPIKeyScene();
+            // Start the messaging scene loop.
+            var messages_1 = [];
+            var add_1 = buildAskAIScene(function (content) {
+                var MODEL = "gpt-3.5-turbo";
+                return fetch("https://api.openai.com/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                        Authorization: "Bearer ".concat(key_1),
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        model: MODEL,
+                        temperature: 0,
+                        messages: [
+                            {
+                                role: "system",
+                                content: "pretend to be a cat",
+                            },
+                            { role: "user", content: content },
+                        ],
+                    }),
+                })
+                    .then(function (res) { return res.json(); })
+                    .then(function (res) {
+                    messages_1 = res.choices[0].message;
+                    add_1(messages_1);
+                });
+            });
+        }
         // If it happens to be a valid page or the AI allows me to view it,
         // disable some of the more distracting elements.
         (_a = document.querySelector(SELECTORS.relatedVideos)) === null || _a === void 0 ? void 0 : _a.remove();
@@ -225,27 +302,5 @@
     // https://stackoverflow.com/questions/34077641/how-to-detect-page-navigation-on-youtube-and-modify-its-appearance-seamlessly
     run();
     window.addEventListener("yt-navigate-start", run);
-    // async function askAI(content: string) {
-    //   const API_KEY = process.env.OPENAI_API_KEY;
-    //   const MODEL = "gpt-3.5-turbo";
-    //   return fetch("https://api.openai.com/v1/chat/completions", {
-    //     method: "POST",
-    //     headers: {
-    //       Authorization: `Bearer ${API_KEY}`,
-    //       "Content-Type": "application/json",
-    //     },
-    //     body: JSON.stringify({
-    //       model: MODEL,
-    //       temperature: 0,
-    //       messages: [
-    //         {
-    //           role: "system",
-    //           content: AI.prompt,
-    //         },
-    //         { role: "user", content },
-    //       ],
-    //     }),
-    //   });
-    // }
 
 })();
