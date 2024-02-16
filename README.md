@@ -1,6 +1,12 @@
 # [WIP] productivity
 
-Some scripts I've built up over the years that I use to help with my productivity. Primarily, these are scripts that either _limit_ some undesirable activity such as watching youtube or
+Some Tapermonkey scripts I use to improve my productivity.
 
-TODO: 
-- Clean up and add more scripts I have locally.
+### Writing Scripts
+
+To enable modular code, each script follows a very specific file and folder convention which makes writing the bundling logic in rollup significantly easier.
+
+Each script is composed of two parts:
+
+- config.tm.txt = the config you would typically see at the top of a TM script.
+- index.tm.txt = the actual script itself.
