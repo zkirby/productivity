@@ -1,0 +1,10 @@
+// ==UserScript==
+// @name         Youtube Regulator
+// @namespace    http://tampermonkey.net/
+// @version      2024-01-12
+// @description  Regulate your Youtube usage, no weekday usage and limited weekend usage.
+// @author       zkirby
+// @match        https://www.youtube.com/*
+// @icon         https://www.google.com/s2/favicons?sz=64&domain=youtube.com
+// @grant        none
+// ==/UserScript==

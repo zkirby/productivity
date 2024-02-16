@@ -1,2 +1,5 @@
 node_modules
 .env.local
+
+# There's explicitly no 'dist' folder in the .gitignore file bc I want to make the 
+# built scripts accessible for anyone that wants to copy and paste them into tapermonkey

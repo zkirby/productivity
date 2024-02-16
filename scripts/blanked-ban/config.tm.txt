@@ -1,0 +1,10 @@
+// ==UserScript==
+// @name         Blanket Ban
+// @version      2023-03-07
+// @description  Blanket Bans access to a specific site.
+// @author       zkirby
+// @match        https://www.facebook.com/*
+// @match        https://twitter.com/*
+// @match        https://www.instagram.com/*
+// @grant        none
+// ==/UserScript==

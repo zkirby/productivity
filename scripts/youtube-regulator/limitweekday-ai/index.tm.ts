@@ -1,19 +1,18 @@
-import buildButton from "../../lib/elements/buildButton";
-import buildContainer from "../../lib/elements/buildContainer";
-import buildOverlay from "../../lib/elements/buildOverlay";
-import buildText from "../../lib/elements/buildText";
-import isWeekend from "../../lib/isWeekend";
+import buildButton from "../../../lib/elements/buildButton";
+import buildContainer from "../../../lib/elements/buildContainer";
+import buildOverlay from "../../../lib/elements/buildOverlay";
+import buildText from "../../../lib/elements/buildText";
+import isWeekend from "../../../lib/isWeekend";
 import checkIsSubscriptionPage from "../lib/checkIsSubscriptionPage";
 import buildChatMessage from "../lib/elements/buildChatMessage";
+import {
+  load as loadVideoLinks,
+  set as setVideoLinks,
+} from "../lib/videoLinks";
 import { SELECTORS } from "../lib/youtube.constants";
 
 // ---------- Constants ----------
-const AI = {
-  prompt: `
-      Pretend I am a child asking for permission to view a video. You are my parent and are responsible for my well-being.
-      As such, you must ensure that I only view videos that are educational and not distracting from my work or studies.
-    `,
-};
+const VIDEO_LINKS_KEY = "subVideoLinks";
 
 // ---------- Scene ----------
 /**
@@ -41,6 +40,42 @@ function buildAskAIScene() {
   document.body.appendChild(overlayElement);
 }
 
+// ---------- Main ------------
+function run() {
+  // Allow for unrestricted Youtube access on the weekends.
+  if (isWeekend()) return;
+
+  // We *must* navigate to the subscriptions page to be allowed to view
+  // a video since we're only allowed to view videos from the subscriptions page.
+  // While we're on the page, we'll collect all of the valid video links.
+  // NOTE: Edge case where we have more valid videos than what's rendered, not a big deal.
+  const isSubscriptionPage = checkIsSubscriptionPage();
+  if (isSubscriptionPage) {
+    // HACK: Need to wait for the videos to load... couldn't find a better way to do this.
+    setTimeout(() => setVideoLinks(VIDEO_LINKS_KEY), 1000);
+  }
+
+  const currentURL = window.location.href;
+  const isSubVideoLink = loadVideoLinks(VIDEO_LINKS_KEY).some((link) =>
+    currentURL.endsWith(link)
+  );
+  const isAllowed = isSubscriptionPage || isSubVideoLink;
+
+  // Immediately blackout any screen that isn't the subscriptions page
+  // or a video from the subscriptions page. Let the AI decide if I can view it.
+  if (!isAllowed) buildAskAIScene();
+
+  // If it happens to be a valid page or the AI allows me to view it,
+  // disable some of the more distracting elements.
+  document.querySelector(SELECTORS.relatedVideos)?.remove();
+}
+
+// Perform the check on every new page.
+// See this stack overflow post for why it's done this way
+// https://stackoverflow.com/questions/34077641/how-to-detect-page-navigation-on-youtube-and-modify-its-appearance-seamlessly
+run();
+window.addEventListener("yt-navigate-start", run);
+
 // async function askAI(content: string) {
 //   const API_KEY = process.env.OPENAI_API_KEY;
 //   const MODEL = "gpt-3.5-turbo";
@@ -64,49 +99,3 @@ function buildAskAIScene() {
 //     }),
 //   });
 // }
-
-// ---------- Main Check ------------
-function check() {
-  // Allow for unrestricted Youtube access on the weekends.
-  if (isWeekend()) return;
-
-  const currentURL = window.location.href;
-
-  // We *must* navigate to the subscriptions page to be allowed to view
-  // a video since we're only allowed to view videos from the subscriptions page.
-  // While we're on the page, we'll collect all of the valid video links.
-  // NOTE: Edge case where we have more valid videos than what's rendered, not a big deal.
-  const isSubscriptionPage = checkIsSubscriptionPage(currentURL);
-  if (isSubscriptionPage) {
-    // TODO: I swear to you I will figure out a better way to do this.
-    setTimeout(() => {
-      // First, remove the shorts - those don't count.
-      const shorts = document.querySelector(SELECTORS.shorts);
-      shorts?.remove();
-
-      const subVideoLinks = Array.from(
-        document.querySelectorAll(SELECTORS.videoLinks)
-      ).map((a) => a.getAttribute("href"));
-      localStorage.setItem("subVideoLinks", JSON.stringify(subVideoLinks));
-    }, 1000);
-  }
-
-  const isSubVideoLink = JSON.parse(
-    localStorage.getItem("subVideoLinks") ?? "[]"
-  ).some((link) => currentURL.endsWith(link));
-  const isAllowed = isSubscriptionPage || isSubVideoLink;
-
-  // Immediately blackout any screen that isn't the subscriptions page
-  // or a video from the subscriptions page. Let the AI decide if I can view it.
-  if (!isAllowed) buildAskAIScene();
-
-  // If it happens to be a valid page or the AI allows me to view it,
-  // disable some of the more distracting elements.
-  document.querySelector(SELECTORS.relatedVideos)?.remove();
-}
-
-// Perform the check on every new page.
-// See this stack overflow post for why it's done this way
-// https://stackoverflow.com/questions/34077641/how-to-detect-page-navigation-on-youtube-and-modify-its-appearance-seamlessly
-check();
-window.addEventListener("yt-navigate-start", check);
