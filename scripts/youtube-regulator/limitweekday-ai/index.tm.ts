@@ -9,19 +9,30 @@ import buildChatMessage from "../lib/elements/buildChatMessage";
 import {
   load as loadVideoLinks,
   set as setVideoLinks,
+  add as addVideoLink,
 } from "../lib/videoLinks";
 import { SELECTORS } from "../lib/youtube.constants";
 
 // ---------- Constants ----------
 const VIDEO_LINKS_KEY = "subVideoLinks";
+const PROMPT = `
+Pretend that I am a child and I want to watch a video. 
+You are my parent and are responsible for ensuring that I stay productive and only watch videos that would be beneficial to my learning.
+I'm going to try to convince you that I should be allowed to watch the video in question.
+You are responsible for making the final decision.
+If you determine that I should be allowed to watch the video, respond with exactly "I'll allow it" and nothing else.
+`;
 
 // ---------- Scenes ----------
 /**
  * Ask for the users OPEN_API_KEY to be able to engage with the AI.
  */
-function buildAskForAPIKeyScene() {
-  const APIKEY = localStorage.getItem("OPENAI_API_KEY");
-  if (APIKEY) return APIKEY;
+async function buildAskForAPIKeyScene(next) {
+  const API_KEY = localStorage.getItem("OPENAI_API_KEY");
+  if (API_KEY) {
+    next(API_KEY);
+    return;
+  }
 
   const overlayElement = buildOverlay();
   const containerElement = buildContainer();
@@ -35,18 +46,19 @@ function buildAskForAPIKeyScene() {
       if (apiKey) {
         // Save the API key and reload the page.
         localStorage.setItem("OPENAI_API_KEY", apiKey);
-        window.location.reload();
+        next(apiKey);
       }
     },
   });
 
-  containerElement.appendChild(messageElement);
   containerElement.appendChild(inputElement);
   containerElement.appendChild(buttonElement);
 
+  overlayElement.appendChild(messageElement);
   overlayElement.appendChild(containerElement);
 
-  return localStorage.getItem("OPENAI_API_KEY");
+  document.body.innerHTML = "";
+  document.body.appendChild(overlayElement);
 }
 
 /**
@@ -76,8 +88,21 @@ function buildAskAIScene(onSubmit) {
   return add;
 }
 
+/**
+ * Blackouts the screen when for when not visiting a direct video link
+ */
+function buildBlackoutScene() {
+  const overlayElement = buildOverlay();
+
+  const messageElement = buildText("This Page Is Not Allowed");
+  overlayElement.appendChild(messageElement);
+
+  document.body.innerHTML = "";
+  document.body.appendChild(overlayElement);
+}
+
 // ---------- Main ------------
-function run() {
+async function run() {
   // Allow for unrestricted Youtube access on the weekends.
   if (isWeekend()) return;
 
@@ -100,38 +125,67 @@ function run() {
   // Immediately blackout any screen that isn't the subscriptions page
   // or a video from the subscriptions page. Let the AI decide if I can view it.
   if (!isAllowed) {
+    // Only *direct* video links are allowed
+    if (!currentURL.includes("/watch?v=")) {
+      buildBlackoutScene();
+      return;
+    }
+
     // Ensure OPEN API KEY is loaded (otherwise can't engage with the AI).
-    const key = buildAskForAPIKeyScene();
+    setTimeout(
+      () =>
+        buildAskForAPIKeyScene((key: string) => {
+          // Start the messaging scene loop.
+          const videoTitle = document.querySelector(
+            SELECTORS.title
+          )?.textContent;
+          const videoDescription = document.querySelector(
+            SELECTORS.description
+          )?.textContent;
+          const videoMetaData = `
+      ### VIDEO TITLE
+      ${videoTitle}
 
-    // Start the messaging scene loop.
-    let messages = [];
-    const add = buildAskAIScene((content) => {
-      const MODEL = "gpt-3.5-turbo";
+      ### VIDEO DESCRIPTION
+      ${videoDescription}
+      `;
 
-      return fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${key}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: MODEL,
-          temperature: 0,
-          messages: [
+          let messages = [
             {
               role: "system",
-              content: "pretend to be a cat",
+              content: `${PROMPT}${videoMetaData}`,
             },
-            { role: "user", content },
-          ],
+          ];
+
+          const add = buildAskAIScene((content) => {
+            const MODEL = "gpt-3.5-turbo";
+            messages.push({ role: "user", content });
+
+            return fetch("https://api.openai.com/v1/chat/completions", {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${key}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                model: MODEL,
+                temperature: 0,
+                messages,
+              }),
+            })
+              .then((res) => res.json())
+              .then((res) => {
+                const message = res.choices[0].message?.content;
+                add(message);
+                if (message.includes("I'll allow it")) {
+                  addVideoLink(VIDEO_LINKS_KEY, currentURL);
+                  window.location.reload();
+                }
+              });
+          });
         }),
-      })
-        .then((res) => res.json())
-        .then((res) => {
-          messages = res.choices[0].message;
-          add(messages);
-        });
-    });
+      2000
+    );
   }
 
   // If it happens to be a valid page or the AI allows me to view it,

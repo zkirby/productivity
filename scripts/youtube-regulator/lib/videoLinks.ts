@@ -18,6 +18,15 @@ export function set(key: string) {
 }
 
 /**
+ * Add one video link to the allowed videos
+ */
+export function add(key: string, link: string) {
+  const links = load(key);
+  links.push(link);
+  localStorage.setItem(`tm-links-${key}`, JSON.stringify(links));
+}
+
+/**
  * Gets all of the video links from local storage
  */
 export function load(key: string) {

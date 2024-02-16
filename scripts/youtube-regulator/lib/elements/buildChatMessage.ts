@@ -20,6 +20,7 @@ export default function buildChatMessage(onSubmit) {
   chatContainer.style.display = "flex";
   chatContainer.style.flexDirection = "column";
   chatContainer.style.height = "400px"; // Adjust as needed
+  chatContainer.style.width = "800px"; // Adjust as needed
   chatContainer.style.border = "1.5px solid #ccc";
   chatContainer.style.padding = "10px";
 
