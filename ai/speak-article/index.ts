@@ -27,7 +27,7 @@ async function extractTextFromHTML(url: string) {
 }
 
 const openai = new OpenAI({
-  apiKey: "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",
+  apiKey: "", // key here
 });
 
 const speechFile = path.resolve("./speech.mp3");

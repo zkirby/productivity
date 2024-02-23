@@ -28,7 +28,7 @@ function buildRestrictionScene() {
 }
 
 function run() {
-  // Allow for unrestricted Youtube access on the weekends.
+  // Allow for up to 10 Youtube videos on the weekends.
   if (isWeekend()) return;
 
   // We *must* navigate to the subscriptions page to be allowed to view
