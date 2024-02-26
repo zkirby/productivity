@@ -105,6 +105,61 @@
         return JSON.parse((_a = localStorage.getItem("tm-links-".concat(key))) !== null && _a !== void 0 ? _a : "[]");
     }
 
+    /**
+     * Adds a small floating details box that says what the count and date
+     * is for the weekend video count. Only adds it if it's not already there.
+     */
+    function init() {
+        if (!document.getElementById("tm-weekend-video-counter")) {
+            var weekendData = get();
+            var detailsBox = document.createElement("div");
+            detailsBox.id = "tm-weekend-video-counter";
+            detailsBox.style.position = "fixed";
+            detailsBox.style.bottom = "20px";
+            detailsBox.style.right = "20px";
+            detailsBox.style.backgroundColor = "rgba(0, 0, 0, 0.7)";
+            detailsBox.style.color = "white";
+            detailsBox.style.padding = "10px";
+            detailsBox.style.borderRadius = "5px";
+            detailsBox.style.zIndex = "1000";
+            detailsBox.textContent = "Weekend Video Count: ".concat(weekendData.count, " on ").concat(new Date(weekendData.date).toLocaleDateString());
+            document.body.appendChild(detailsBox);
+        }
+    }
+    function get() {
+        var weekend = JSON.parse(localStorage.getItem("tm-yt-weekend") || "null");
+        if (!weekend) {
+            weekend = {
+                date: new Date().toDateString(),
+                count: 0,
+            };
+            localStorage.setItem("tm-yt-weekend", JSON.stringify(weekend));
+        }
+        if (weekend.date !== new Date().toDateString()) {
+            weekend.date = new Date().toDateString();
+            weekend.count = 0;
+            localStorage.setItem("tm-yt-weekend", JSON.stringify(weekend));
+        }
+        return weekend;
+    }
+    function updateDetails() {
+        var detailsBox = document.getElementById("tm-weekend-video-counter");
+        if (detailsBox) {
+            var weekendData = get();
+            detailsBox.textContent = "Weekend Video Count: ".concat(weekendData.count, " on ").concat(new Date(weekendData.date).toLocaleDateString());
+        }
+    }
+    var WeekendVideoCounter = {
+        init: init,
+        get: get,
+        increment: function () {
+            var weekend = get();
+            weekend.count++;
+            localStorage.setItem("tm-yt-weekend", JSON.stringify(weekend));
+            updateDetails();
+        },
+    };
+
     // ---------- Constants ----------
     var VIDEO_LINKS_KEY = "subVideoLinks";
     function buildRestrictionScene() {
@@ -120,9 +175,8 @@
     }
     function run() {
         var _a;
-        // Allow for unrestricted Youtube access on the weekends.
         if (isWeekend())
-            return;
+            WeekendVideoCounter.init();
         // We *must* navigate to the subscriptions page to be allowed to view
         // a video since we're only allowed to view videos from the subscriptions page.
         // While we're on the page, we'll collect all of the valid video links.
@@ -139,8 +193,20 @@
         var isAllowed = isSubscriptionPage || isSubVideoLink;
         // Immediately blackout any screen that isn't the subscriptions page
         // or a video from the subscriptions page. Let the AI decide if I can view it.
-        if (!isAllowed)
+        if (!isAllowed) {
+            // Allow for up to 10 non-subscription Youtube videos on the weekends.
+            if (isWeekend()) {
+                // Only count actual videos watched.
+                if (!currentURL.includes("/watch?v="))
+                    return;
+                var weekendCount = WeekendVideoCounter.get();
+                if (weekendCount.count <= 10) {
+                    WeekendVideoCounter.increment();
+                    return;
+                }
+            }
             buildRestrictionScene();
+        }
         // If it happens to be a valid page or the AI allows me to view it,
         // disable some of the more distracting elements.
         (_a = document.querySelector(SELECTORS.relatedVideos)) === null || _a === void 0 ? void 0 : _a.remove();

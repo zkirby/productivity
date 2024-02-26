@@ -8,6 +8,7 @@ import {
   set as setVideoLinks,
 } from "../lib/videoLinks";
 import { SELECTORS } from "../lib/youtube.constants";
+import WeekendVideoCounter from "../lib/WeekendVideoCounter";
 
 // ---------- Constants ----------
 const VIDEO_LINKS_KEY = "subVideoLinks";
@@ -28,8 +29,7 @@ function buildRestrictionScene() {
 }
 
 function run() {
-  // Allow for up to 10 Youtube videos on the weekends.
-  if (isWeekend()) return;
+  if (isWeekend()) WeekendVideoCounter.init();
 
   // We *must* navigate to the subscriptions page to be allowed to view
   // a video since we're only allowed to view videos from the subscriptions page.
@@ -49,7 +49,21 @@ function run() {
 
   // Immediately blackout any screen that isn't the subscriptions page
   // or a video from the subscriptions page. Let the AI decide if I can view it.
-  if (!isAllowed) buildRestrictionScene();
+  if (!isAllowed) {
+    // Allow for up to 10 non-subscription Youtube videos on the weekends.
+    if (isWeekend()) {
+      // Only count actual videos watched.
+      if (!currentURL.includes("/watch?v=")) return;
+
+      const weekendCount = WeekendVideoCounter.get();
+      if (weekendCount.count <= 10) {
+        WeekendVideoCounter.increment();
+        return;
+      }
+    }
+
+    buildRestrictionScene();
+  }
 
   // If it happens to be a valid page or the AI allows me to view it,
   // disable some of the more distracting elements.
