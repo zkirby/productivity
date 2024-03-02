@@ -23,6 +23,28 @@ You are responsible for making the final decision.
 If you determine that I should be allowed to watch the video, respond with exactly "I'll allow it" and nothing else.
 `;
 
+// ---------- Helpers ---------
+function askAI(key: string, messages: { role: string; content: string }[]) {
+  const MODEL = "gpt-3.5-turbo";
+  return fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${key}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: MODEL,
+      temperature: 0,
+      messages,
+    }),
+  })
+    .then((res) => res.json())
+    .then((res) => {
+      const message = res.choices[0].message?.content;
+      return message;
+    });
+}
+
 // ---------- Scenes ----------
 /**
  * Ask for the users OPEN_API_KEY to be able to engage with the AI.
@@ -157,31 +179,16 @@ async function run() {
             },
           ];
 
-          const add = buildAskAIScene((content) => {
-            const MODEL = "gpt-3.5-turbo";
+          const add = buildAskAIScene(async (content) => {
             messages.push({ role: "user", content });
 
-            return fetch("https://api.openai.com/v1/chat/completions", {
-              method: "POST",
-              headers: {
-                Authorization: `Bearer ${key}`,
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                model: MODEL,
-                temperature: 0,
-                messages,
-              }),
-            })
-              .then((res) => res.json())
-              .then((res) => {
-                const message = res.choices[0].message?.content;
-                add(message);
-                if (message.includes("I'll allow it")) {
-                  addVideoLink(VIDEO_LINKS_KEY, currentURL);
-                  window.location.reload();
-                }
-              });
+            const message = await askAI(key, messages);
+
+            add(message);
+            if (message.includes("I'll allow it")) {
+              addVideoLink(VIDEO_LINKS_KEY, currentURL);
+              window.location.reload();
+            }
           });
         }),
       2000
