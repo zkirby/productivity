@@ -1,0 +1,10 @@
+// ==UserScript==
+// @name         Diet Reddit
+// @namespace    http://tampermonkey.net/
+// @version      2024-01-12
+// @description  Regulate your Reddit usage to only subscribed to
+// @author       zkirby
+// @match        https://www.reddit.com/*
+// @icon         https://www.google.com/s2/favicons?sz=64&domain=youtube.com
+// @grant        none
+// ==/UserScript==

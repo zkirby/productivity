@@ -92,14 +92,10 @@ function buildAskAIScene(onSubmit) {
   const containerElement = buildContainer();
 
   const messageElement = buildText("This Video Is Not Allowed");
-  const buttonElement = buildButton("Okay", {
-    onClick: () => window.close(),
-  });
 
   const [chatMessageElement, add] = buildChatMessage(onSubmit);
 
   containerElement.appendChild(messageElement);
-  containerElement.appendChild(buttonElement);
 
   overlayElement.appendChild(containerElement);
   overlayElement.appendChild(chatMessageElement);
@@ -125,9 +121,6 @@ function buildBlackoutScene() {
 
 // ---------- Main ------------
 async function run() {
-  // Allow for unrestricted Youtube access on the weekends.
-  if (isWeekend()) return;
-
   // We *must* navigate to the subscriptions page to be allowed to view
   // a video since we're only allowed to view videos from the subscriptions page.
   // While we're on the page, we'll collect all of the valid video links.
