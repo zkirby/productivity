@@ -19,6 +19,8 @@
     "tslib": "^2.6.2"
   },
   "dependencies": {
+    "@rollup/plugin-json": "^6.1.0",
+    "@xenova/transformers": "^2.16.0",
     "date-fns": "^3.3.1",
     "typescript": "^5.3.3",
     "youtube-transcript": "^1.1.0"
