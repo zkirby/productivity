@@ -73,6 +73,8 @@ async function run() {
       },
     ]);
 
+    console.log("RESPONSE: ", message);
+
     const isAllowed = message.includes("Yes");
 
     if (isAllowed) {

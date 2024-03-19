@@ -66,6 +66,7 @@ async function init() {
             const { text } = e.detail;
             const response = await classifier(text);
         
+            console.log(response[0].generated_text);
             window.dispatchEvent(
                 new CustomEvent("${TRANSFORMER_EVENTS.RESPONSE}", {
                 detail: {

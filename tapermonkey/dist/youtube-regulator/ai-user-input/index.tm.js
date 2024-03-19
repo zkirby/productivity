@@ -254,7 +254,7 @@
 
     // ---------- Constants ----------
     var VIDEO_LINKS_KEY = "subVideoLinks";
-    var PROMPT = "\nPretend that I am a child and I want to watch a video. \nYou are my parent and are responsible for ensuring that I stay productive and only watch videos that would be beneficial to my learning.\nI'm going to try to convince you that I should be allowed to watch the video in question.\nYou are responsible for making the final decision.\nIf you determine that I should be allowed to watch the video, respond with exactly \"I'll allow it\" and nothing else.\n";
+    var PROMPT = "\nYou are responsible for ensuring that I stay productive and only watch videos that would be beneficial to my learning.\nRight now I am learning about:\n- Transformers, LLMs, Linear Algebra, and other related topics.\n- React, TypeScript, and other related topics.\n- WebGl, Three.js, and other related topics. \n\nIf you think the video should be allowed, please respond with \"I'll allow it\".\n";
     // ---------- Helpers ---------
     function askAI(key, messages) {
         var MODEL = "gpt-3.5-turbo";

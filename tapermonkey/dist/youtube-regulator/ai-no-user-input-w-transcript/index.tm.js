@@ -157,7 +157,7 @@
     }
 
     var VIDEO_LINKS_KEY = "sub-video-links";
-    var PROMPT = "\nPretend that I am a child and I want to watch a video. \nYou are my parent and are responsible for ensuring that I stay productive and only watch videos that would be beneficial to my learning.\nRight now I am learning about:\n- Transformers, LLMs, Linear Algebra, and other related topics.\n- React, TypeScript, and other related topics.\n- WebGl, Three.js, and other related topics. \n\nYou may respond with one of the following and **nothing else**:\n\"Yes\" - if the video is allowed\n\"No\" - if the video is not allowed\n";
+    var PROMPT = "\nYou are responsible for ensuring that I stay productive and only watch videos that would be beneficial to my learning.\nRight now I am learning about:\n- Transformers, LLMs, Linear Algebra, and other related topics.\n- React, TypeScript, and other related topics.\n- WebGl, Three.js, and other related topics. \n\nYou may respond with one of the following and **nothing else**:\n\"Yes\" - if the video is allowed\n\"No\" - if the video is not allowed\n";
 
     /*! *****************************************************************************
     Copyright (c) Microsoft Corporation.
@@ -201,6 +201,7 @@
         RESPONSE: "tm-transformer-response",
         LOADED: "tm-transformer-loaded",
     };
+    var MODEL = "Xenova/LaMini-Flan-T5-783M";
     function run$1() {
         var _a, _b;
         return __awaiter(this, void 0, void 0, function () {
@@ -235,11 +236,10 @@
                 script.type = "module";
                 script.crossOrigin = "anonymous";
                 script.id = SCRIPT_ID;
-                script.innerHTML = "\n      import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.16.0';\n    \n      async function run() {\n        env.allowLocalModels = false;\n        // Enable for debugging\n        // env.useFSCache = false;\n        // env.useBrowserCache = false;\n  \n        const classifier = await pipeline('text2text-generation', 'meta-llama/Llama-2-70b-hf');\n        console.log('loaded')\n       \n        window.addEventListener(\"".concat(TRANSFORMER_EVENTS.REQUEST, "\", async (e) => {\n            console.log(\"got request\");\n            const { text } = e.detail;\n            const response = await classifier(text);\n        \n            console.log(response);\n            window.dispatchEvent(\n                new CustomEvent(\"").concat(TRANSFORMER_EVENTS.RESPONSE, "\", {\n                detail: {\n                    result: response[0].generated_text.slice(-50),\n                },\n            }));\n        });\n\n        window.dispatchEvent(new CustomEvent(\"").concat(TRANSFORMER_EVENTS.LOADED, "\"));\n      }\n      run().catch(console.error);\n      ");
+                script.innerHTML = "\n      import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.16.0';\n    \n      async function run() {\n        env.allowLocalModels = false;\n        // Enable for debugging\n        // env.useFSCache = false;\n        // env.useBrowserCache = false;\n  \n        const classifier = await pipeline('text2text-generation', '".concat(MODEL, "');\n       \n        window.addEventListener(\"").concat(TRANSFORMER_EVENTS.REQUEST, "\", async (e) => {\n            const { text } = e.detail;\n            const response = await classifier(text);\n        \n            console.log(response[0].generated_text);\n            window.dispatchEvent(\n                new CustomEvent(\"").concat(TRANSFORMER_EVENTS.RESPONSE, "\", {\n                detail: {\n                    result: response[0].generated_text.slice(-50),\n                },\n            }));\n        });\n\n        window.dispatchEvent(new CustomEvent(\"").concat(TRANSFORMER_EVENTS.LOADED, "\"));\n      }\n      run().catch(console.error);\n      ");
                 window.addEventListener(TRANSFORMER_EVENTS.RESPONSE, function (e) {
                     // @ts-expect-error
                     var isAllowed = e.detail.result.includes("Yes");
-                    console.log("isAllowed", isAllowed);
                     if (isAllowed) {
                         buildIndicator("Status: Allowed");
                         add(VIDEO_LINKS_KEY, window.location.href);
@@ -255,12 +255,12 @@
             });
         });
     }
-    var localRunner = {
+    var LocalRunner = {
         run: run$1,
         init: init,
     };
 
-    var runner = localRunner ;
+    var Runner = LocalRunner ;
     // ---------- Main ------------
     function run() {
         return __awaiter(this, void 0, void 0, function () {
@@ -275,12 +275,12 @@
                 });
                 if (isAllowed)
                     return [2 /*return*/];
-                runner.run();
+                Runner.run();
                 return [2 /*return*/];
             });
         });
     }
-    runner.init();
+    Runner.init();
     // Perform the check on every new page.
     // See this stack overflow post for why it's done this way
     // https://stackoverflow.com/questions/34077641/how-to-detect-page-navigation-on-youtube-and-modify-its-appearance-seamlessly

@@ -16,11 +16,13 @@ import { SELECTORS } from "../lib/youtube.constants";
 // ---------- Constants ----------
 const VIDEO_LINKS_KEY = "subVideoLinks";
 const PROMPT = `
-Pretend that I am a child and I want to watch a video. 
-You are my parent and are responsible for ensuring that I stay productive and only watch videos that would be beneficial to my learning.
-I'm going to try to convince you that I should be allowed to watch the video in question.
-You are responsible for making the final decision.
-If you determine that I should be allowed to watch the video, respond with exactly "I'll allow it" and nothing else.
+You are responsible for ensuring that I stay productive and only watch videos that would be beneficial to my learning.
+Right now I am learning about:
+- Transformers, LLMs, Linear Algebra, and other related topics.
+- React, TypeScript, and other related topics.
+- WebGl, Three.js, and other related topics. 
+
+If you think the video should be allowed, please respond with "I'll allow it".
 `;
 
 // ---------- Helpers ---------
