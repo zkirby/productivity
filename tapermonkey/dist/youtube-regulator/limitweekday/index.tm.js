@@ -200,7 +200,7 @@
                 if (!currentURL.includes("/watch?v="))
                     return;
                 var weekendCount = WeekendVideoCounter.get();
-                if (weekendCount.count <= 10) {
+                if (weekendCount.count <= 6) {
                     WeekendVideoCounter.increment();
                     return;
                 }
